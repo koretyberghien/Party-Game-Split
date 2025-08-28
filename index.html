@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Split Game</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- ========== HOME ========== -->
+  <section id="home" class="home-container">
+    <div class="home-inner">
+      <h1 class="game-title">The Split Game</h1>
+      <p class="game-slogan">Split or Spit</p>
+
+      <div id="miniPlayerList"></div>
+
+      <div class="menu-buttons">
+        <button id="btnPlayers" class="menu-btn">➕ Add Player</button>
+        <button id="btnMaps" class="menu-btn">🗺 Select Map</button>
+        <button id="btnQuestions" class="menu-btn">❓ Manage Questions</button>
+        <button id="btnPlay" class="menu-btn menu-wide">▶ Play</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== PLAYERS ========== -->
+  <section id="players" class="page hidden">
+    <div class="page-inner">
+      <h2>Players</h2>
+      <div class="card">
+        <div class="form">
+          <input id="pName" class="input" placeholder="Naam" />
+          <div class="row">
+            <select id="pGender" class="select">
+              <option value="male">Man</option>
+              <option value="female">Vrouw</option>
+            </select>
+            <select id="pFace" class="select">
+              <option value="round">Rond</option>
+              <option value="oval">Ovaal</option>
+              <option value="square">Vierkant</option>
+            </select>
+          </div>
+          <div class="row">
+            <label class="label">Huidskleur
+              <input id="pSkin" type="color" class="input" value="#ffd6b0" />
+            </label>
+            <label class="label">Spelerkleur
+              <input id="pColor" type="color" class="input" value="#ff6b6b" />
+            </label>
+          </div>
+          <button id="pSave" class="btn">Opslaan</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3>Huidige spelers</h3>
+        <div id="playerList" class="list"></div>
+        <div class="actions">
+          <button id="pClear" class="btn btn-dark">Alles verwijderen</button>
+          <button data-nav="home" class="btn">Terug</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== MAPS ========== -->
+  <section id="maps" class="page hidden">
+    <div class="page-inner">
+      <h2>Select Map</h2>
+      <div id="mapList" class="list"></div>
+      <div class="actions">
+        <button data-nav="home" class="btn">Terug</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== QUESTIONS ========== -->
+  <section id="questions" class="page hidden">
+    <div class="page-inner">
+      <h2>Manage Questions</h2>
+      <div class="card">
+        <div class="form">
+          <div>Actieve map: <strong id="qMapName"></strong></div>
+          <textarea id="qText" class="input" rows="3" placeholder="Vraag / opdracht"></textarea>
+          <div class="row">
+            <input id="qSpeak" class="input" placeholder="Tekst voor presentator (optioneel)"/>
+            <input id="qCount" class="input" type="number" min="1" max="6" value="2" />
+          </div>
+          <button id="qAdd" class="btn">Vraag toevoegen</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3>Vragenlijst</h3>
+        <div id="qList" class="list"></div>
+        <div class="actions">
+          <button data-nav="home" class="btn">Terug</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== GAME ========== -->
+  <section id="game" class="game-wrap hidden">
+    <!-- HUD (gekleurde chips met namen) -->
+    <div id="hud"></div>
+
+    <!-- Overlay voor vragen / versus / winner -->
+    <div id="overlay" class="hidden">
+      <div class="overlay-card">
+        <div id="ovTitle" class="overlay-title">Vraag</div>
+        <div id="ovBody" class="overlay-body"></div>
+        <div id="ovActions" class="overlay-actions"></div>
+        <div class="overlay-actions">
+          <button id="ovClose" class="btn">Sluiten</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3D canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Controls -->
+    <div class="game-controls">
+      <button id="btnNextQuestion" class="btn">Next Question</button>
+      <button data-nav="home" class="btn btn-dark">Stop</button>
+    </div>
+  </section>
+
+  <!-- Three.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js"></script>
+  <!-- App -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
