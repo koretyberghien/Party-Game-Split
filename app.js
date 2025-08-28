@@ -6,7 +6,7 @@ const store = {
   set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
 };
 
-// defaults (eenmalig)
+// eenmalige defaults
 if (!store.get('players', null)) store.set('players', []);
 if (!store.get('activeMap', null)) store.set('activeMap', 'jungle');
 if (!store.get('maps', null)) store.set('maps', [
@@ -16,10 +16,32 @@ if (!store.get('maps', null)) store.set('maps', [
 ]);
 if (!store.get('questions', null)) store.set('questions', {
   jungle:  [{id:crypto.randomUUID(), text:'Armworstel duel!', speak:'Kies twee kampioenen voor een armworstel duel!', count:2}],
-  desert:  [{id:crypto.randomUUID(), text:'Doe een zand-sprint! 1 speler.', speak:'Wie kan het snelst? Klaar voor de start!', count:1}],
+  desert:  [{id:crypto.randomUUID(), text:'Zandsprint! 1 speler.', speak:'Wie is het snelst? Klaar voor de start!', count:1}],
   volcano: [{id:crypto.randomUUID(), text:'Lava-jump! 3 spelers springen op 1 been.', speak:'Pas op voor de lava!', count:3}],
 });
 
+// fallback/repair defaults als user ooit alles leeg zet
+function ensureDefaults() {
+  const defMaps = [
+    { id:'jungle',  name:'Jungle Run',   steps: 26, tint:'#6bbf59' },
+    { id:'desert',  name:'Desert Dash',  steps: 22, tint:'#e0b27a' },
+    { id:'volcano', name:'Volcano Rush', steps: 24, tint:'#a64b2a' }
+  ];
+  const cur = store.get('maps', []);
+  if (!Array.isArray(cur) || cur.length === 0) store.set('maps', defMaps);
+
+  const qs = store.get('questions', {});
+  ['jungle','desert','volcano'].forEach(k=>{
+    if (!qs[k]) qs[k]=[];
+  });
+  if (qs.jungle.length===0) qs.jungle.push({id:crypto.randomUUID(), text:'Armworstel duel!', speak:'Kies twee kampioenen voor een armworstel duel!', count:2});
+  store.set('questions', qs);
+}
+ensureDefaults();
+
+/**********************
+ * NAV HELPERS
+ **********************/
 const $ = (q, d=document)=> d.querySelector(q);
 const sections = { home:$('#home'), players:$('#players'), maps:$('#maps'), questions:$('#questions'), game:$('#game') };
 function go(name){
@@ -52,7 +74,7 @@ $('#btnQuestions').onclick = ()=> go('questions');
 $('#btnPlay').onclick      = ()=> startGame();
 
 /**********************
- * PLAYERS + 3D AVATAR BUILDER
+ * PLAYERS + AVATAR BUILDER (3D preview)
  **********************/
 const pList = $('#playerList');
 function renderPlayers(){
@@ -71,12 +93,14 @@ function renderPlayers(){
 }
 renderPlayers();
 
+// form refs
 const fields = {
   name: $('#pName'), gender: $('#pGender'), face: $('#pFace'),
   skin: $('#pSkin'), color: $('#pColor'),
-  hairColor: $('#pHairColor'), hairStyle: $('#pHairStyle'),
-  eyes: $('#pEyes'), mouth: $('#pMouth')
+  hairColor: $('#pHairColor'),
 };
+let uiState = { hairStyle: 'none', eyes: 'dot', mouth: 'line' };
+
 $('#pSave').onclick = ()=>{
   const name = fields.name.value.trim();
   if (!name) return alert('Naam invullen!');
@@ -84,13 +108,13 @@ $('#pSave').onclick = ()=>{
     id: crypto.randomUUID(),
     name,
     gender: fields.gender.value,
-    face: fields.face.value,
+    face: $('#pFace').value,
     skin: fields.skin.value,
     color: fields.color.value,
     hairColor: fields.hairColor.value,
-    hairStyle: fields.hairStyle.value,
-    eyes: fields.eyes.value,
-    mouth: fields.mouth.value,
+    hairStyle: uiState.hairStyle,
+    eyes: uiState.eyes,
+    mouth: uiState.mouth,
     position: 0, score: 0, chosenCount: 0
   };
   const arr = store.get('players', []); arr.push(player); store.set('players', arr);
@@ -100,10 +124,10 @@ $('#pSave').onclick = ()=>{
 $('#pClear').onclick = ()=> { if (confirm('Alle spelers wissen?')) { store.set('players', []); renderPlayers(); renderMini(); } };
 document.querySelectorAll('[data-nav]').forEach(b=> b.onclick = ()=> go(b.dataset.nav));
 
-/******** Avatar Builder (Three.js head preview) ********/
-let avatarPreview = null;
+/******** Avatar Builder (Three.js head preview + visuele keuzes) ********/
 function initAvatarPreview(){
   const canvas = $('#avatarCanvas'); if (!canvas) return;
+
   const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
   const w = canvas.clientWidth || 360, h = canvas.clientHeight || 360;
   renderer.setSize(w, h, false);
@@ -167,24 +191,56 @@ function initAvatarPreview(){
   }
   function rebuild(){
     scene.remove(headGroup); headGroup = new THREE.Group(); scene.add(headGroup);
-    const skin = fields.skin.value || '#ffd6b0';
-    const face = fields.face.value;
+    const skin = $('#pSkin').value || '#ffd6b0';
+    const face = $('#pFace').value;
+    const hairColor = $('#pHairColor').value || '#2b1a10';
+
     const head = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), new THREE.MeshStandardMaterial({ color: skin }));
     if (face==='oval') head.scale.set(0.9,1.15,0.95);
     if (face==='square') head.scale.set(1.15,1.0,1.15);
     headGroup.add(head);
-    const hair = makeHair(fields.hairStyle.value, fields.hairColor.value); if (hair) headGroup.add(hair);
-    headGroup.add(makeEyes(fields.eyes.value));
-    headGroup.add(makeMouth(fields.mouth.value));
+
+    const hair = makeHair(uiState.hairStyle, hairColor); if (hair) headGroup.add(hair);
+    headGroup.add(makeEyes(uiState.eyes));
+    headGroup.add(makeMouth(uiState.mouth));
   }
   function tick(){ headGroup.rotation.y += 0.01; renderer.render(scene, camera); requestAnimationFrame(tick); }
-  ['pSkin','pFace','pHairStyle','pHairColor','pEyes','pMouth'].forEach(id=>{
+  rebuild(); tick();
+
+  // Visual picker bindings
+  const hairGrid  = $('#hairStyles');
+  const eyesGrid  = $('#eyeStyles');
+  const mouthGrid = $('#mouthStyles');
+
+  function activate(grid, key, value){
+    uiState[key] = value;
+    [...grid.querySelectorAll('.option')].forEach(b=> b.classList.toggle('active', b.dataset[key]===value));
+    rebuild();
+  }
+
+  hairGrid?.addEventListener('click', e=>{
+    const btn = e.target.closest('.option'); if (!btn) return;
+    activate(hairGrid, 'hair', (uiState.hairStyle = btn.dataset.hair));
+  });
+  eyesGrid?.addEventListener('click', e=>{
+    const btn = e.target.closest('.option'); if (!btn) return;
+    activate(eyesGrid, 'eyes', (uiState.eyes = btn.dataset.eyes));
+  });
+  mouthGrid?.addEventListener('click', e=>{
+    const btn = e.target.closest('.option'); if (!btn) return;
+    activate(mouthGrid, 'mouth', (uiState.mouth = btn.dataset.mouth));
+  });
+
+  // kleur/face updates
+  ['pSkin','pFace','pHairColor'].forEach(id=>{
     $('#'+id)?.addEventListener('input', rebuild);
     $('#'+id)?.addEventListener('change', rebuild);
   });
-  rebuild(); tick();
 
-  avatarPreview = { renderer, scene, camera };
+  // standaard selectie
+  hairGrid?.querySelector('[data-hair="none"]')?.classList.add('active');
+  eyesGrid?.querySelector('[data-eyes="dot"]')?.classList.add('active');
+  mouthGrid?.querySelector('[data-mouth="line"]')?.classList.add('active');
 }
 initAvatarPreview();
 
@@ -209,7 +265,7 @@ function renderMaps(){
 }
 
 /**********************
- * QUESTIONS
+ * QUESTIONS (mooie UI)
  **********************/
 const qMapName = $('#qMapName'), qList = $('#qList');
 function renderQMapName(){
@@ -228,14 +284,41 @@ function setQs(list){
 }
 function renderQuestions(){
   const qs = getQs(); qList.innerHTML='';
+  if (qs.length===0){
+    const empty = document.createElement('div');
+    empty.className = 'card';
+    empty.innerHTML = 'Nog geen vragen voor deze map. Voeg er hierboven toe!';
+    qList.appendChild(empty);
+    return;
+  }
   qs.forEach((q,i)=>{
-    const row = document.createElement('div'); row.className='item';
-    const dot = document.createElement('div'); dot.className='item-avatar'; dot.style.background = '#ffe7b6';
-    const info = document.createElement('div');
-    info.innerHTML = `<div style="font-weight:900">${q.text}</div><div style="opacity:.8">Deelnemers: ${q.count}${q.speak?` • Presentator: “${q.speak}”`:''}</div>`;
-    const rm = document.createElement('button'); rm.className='btn btn-dark'; rm.textContent='❌';
+    const row = document.createElement('div'); row.className='q-item';
+    const icon = document.createElement('div'); icon.className='q-icon'; icon.textContent = q.count===2 ? '⚔️' : '❓';
+    const body = document.createElement('div'); body.className='q-body';
+    const title = document.createElement('div'); title.className='q-title'; title.textContent = q.text;
+    const meta = document.createElement('div'); meta.className='q-meta';
+    const badge = document.createElement('span'); badge.className='badge'; badge.innerHTML = `👥 ${q.count}`;
+    meta.appendChild(badge);
+    if (q.speak) {
+      const speak = document.createElement('span'); speak.className='badge'; speak.innerHTML = '🗣 Presentator-tekst';
+      meta.appendChild(speak);
+    }
+    body.append(title, meta);
+
+    const actions = document.createElement('div'); actions.className='q-actions';
+    const edit = document.createElement('button'); edit.className='q-btn edit'; edit.textContent='Bewerk';
+    edit.onclick = ()=>{
+      const t = prompt('Nieuwe vraagtekst:', q.text); if (!t) return;
+      let c = +prompt('Aantal deelnemers:', q.count); if (!c) c = q.count;
+      const s = prompt('Presentator-tekst (optioneel):', q.speak||'') ?? q.speak;
+      const arr=getQs(); arr[i]={...q, text:t, count:c, speak:s}; setQs(arr); renderQuestions();
+    };
+    const rm = document.createElement('button'); rm.className='q-btn'; rm.textContent='Verwijder';
     rm.onclick = ()=>{ const arr=getQs(); arr.splice(i,1); setQs(arr); renderQuestions(); };
-    row.append(dot, info, rm); qList.appendChild(row);
+    actions.append(edit, rm);
+
+    row.append(icon, body, actions);
+    qList.appendChild(row);
   });
 }
 $('#qAdd').onclick = ()=>{
@@ -250,7 +333,7 @@ $('#qAdd').onclick = ()=>{
 /**********************
  * GAME (Three.js wereld)
  **********************/
-let three = null; // scene referenties voor cleanup
+let three = null; // scene refs
 
 function startGame(){
   const players = store.get('players', []);
@@ -288,7 +371,6 @@ function setupThree(players){
   renderer.shadowMap.enabled = true;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x87b86a, 0.003);
 
   const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
   camera.position.set(-10, 12, 16);
@@ -297,36 +379,84 @@ function setupThree(players){
   const hemi = new THREE.HemisphereLight(0xffffff, 0x224422, 1.0); scene.add(hemi);
   const dir  = new THREE.DirectionalLight(0xffffff, 0.9); dir.position.set(10,20,10); dir.castShadow=true; scene.add(dir);
 
-  // ground
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(300,300), new THREE.MeshLambertMaterial({color:0x6bbf59}));
-  ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
-
-  // trees
-  function addTree(x,z,s=1){
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18*s,0.22*s,2*s,8), new THREE.MeshLambertMaterial({color:0x7a4b2a}));
-    trunk.position.set(x,1*s,z); trunk.castShadow=true; scene.add(trunk);
-    const crown = new THREE.Mesh(new THREE.SphereGeometry(1.0*s,16,16), new THREE.MeshLambertMaterial({color:0x2f7d32}));
-    crown.position.set(x,2.6*s,z); crown.castShadow=true; scene.add(crown);
-  }
-  for (let i=0;i<26;i++) addTree((Math.random()-0.5)*90,(Math.random()-0.5)*90,0.7+Math.random()*1.2);
-
-  // path
+  // === WORLD VARIANT OP BASIS VAN MAP ===
   const maps = store.get('maps', []);
   const activeMap = store.get('activeMap','jungle');
   const mapObj = maps.find(m=>m.id===activeMap) || {steps:20};
-  const steps = Math.max(8, mapObj.steps||16);
 
-  const pathPoints = [];
-  let px=-12, pz=-8, dx=1.1, dz=0.8;
-  for (let i=0;i<steps;i++){
-    pathPoints.push(new THREE.Vector3(px,0.02,pz));
-    px += dx; pz += dz;
-    if (i%3===0){ dx=(Math.random()>.5?1:-1)*(0.8+Math.random()*1.3); dz=(Math.random()>.5?1:-1)*(0.5+Math.random()*1.1); }
+  // Terrain + props per map
+  let terrainColor = 0x6bbf59;
+  let addProp = ()=>{};
+  if (activeMap==='jungle'){
+    terrainColor = 0x6bbf59;
+    addProp = (x,z,s=1)=>{
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18*s,0.22*s,2*s,8), new THREE.MeshLambertMaterial({color:0x7a4b2a}));
+      trunk.position.set(x,1*s,z); trunk.castShadow=true; scene.add(trunk);
+      const crown = new THREE.Mesh(new THREE.SphereGeometry(1.0*s,16,16), new THREE.MeshLambertMaterial({color:0x2f7d32}));
+      crown.position.set(x,2.6*s,z); crown.castShadow=true; scene.add(crown);
+    };
+  }
+  if (activeMap==='desert'){
+    terrainColor = 0xE2C574;
+    addProp = (x,z,s=1)=>{
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.18*s,0.2*s,1.6*s,8), new THREE.MeshLambertMaterial({color:0x2f8f2f}));
+      stem.position.set(x,0.8*s,z); stem.castShadow=true; scene.add(stem);
+      const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.12*s,0.12*s,0.6*s,8), stem.material);
+      armL.position.set(x-0.25*s,1.0*s,z); armL.rotation.z = Math.PI/2.4; scene.add(armL);
+      const armR = armL.clone(); armR.position.x = x+0.25*s; scene.add(armR);
+    };
+  }
+  if (activeMap==='volcano'){
+    terrainColor = 0x2d2a2a;
+    addProp = (x,z,s=1)=>{
+      const lava = new THREE.Mesh(new THREE.BoxGeometry(0.9*s,0.06,0.9*s), new THREE.MeshStandardMaterial({ color:0xff3b1f, emissive:0x8b1a00, emissiveIntensity: 0.6 }));
+      lava.position.set(x,0.03,z); scene.add(lava);
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5*s), new THREE.MeshStandardMaterial({ color:0x4a3b3b, roughness:0.9 }));
+      rock.position.set(x+Math.random()*2-1, 0.25, z+Math.random()*2-1); rock.castShadow=true; scene.add(rock);
+    };
   }
 
+  // Ground
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(300,300), new THREE.MeshLambertMaterial({color:terrainColor}));
+  ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+
+  // Props random
+  const propCount = activeMap==='desert' ? 22 : activeMap==='volcano' ? 28 : 24;
+  for (let i=0;i<propCount;i++) addProp((Math.random()-0.5)*90,(Math.random()-0.5)*90, 0.7+Math.random()*1.2);
+
+  // === PATH (andere flow per map) ===
+  const steps = Math.max(10, mapObj.steps||16);
+  const pathPoints = [];
+  if (activeMap==='jungle'){
+    let px=-12, pz=-8, dx=1.1, dz=0.8;
+    for (let i=0;i<steps;i++){
+      pathPoints.push(new THREE.Vector3(px,0.02,pz));
+      px += dx; pz += dz;
+      if (i%3===0){ dx=(Math.random()>.5?1:-1)*(0.8+Math.random()*1.3); dz=(Math.random()>.5?1:-1)*(0.5+Math.random()*1.1); }
+    }
+  } else if (activeMap==='desert'){
+    let r = 10, a = -Math.PI*0.6;
+    for (let i=0;i<steps;i++){
+      const px = r*Math.cos(a), pz = r*Math.sin(a);
+      pathPoints.push(new THREE.Vector3(px,0.02,pz));
+      a += 0.35; r *= 0.97; // spiraal naar binnen
+    }
+  } else { // volcano: S-curve
+    for (let i=0;i<steps;i++){
+      const t = i/4;
+      const px = -14 + i*1.2;
+      const pz = Math.sin(t)*6 + Math.sin(t*0.6)*2;
+      pathPoints.push(new THREE.Vector3(px,0.02,pz));
+    }
+  }
+
+  // Tiles + finish
   const tiles=[];
   for (let i=0;i<pathPoints.length;i++){
-    const tile = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.2,28), new THREE.MeshStandardMaterial({color:0xf0d08a}));
+    const tile = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.9,0.9,0.2,28),
+      new THREE.MeshStandardMaterial({color: activeMap==='volcano' ? 0xe9c37a : 0xf0d08a})
+    );
     tile.position.copy(pathPoints[i]); tile.position.y=0.08; tile.rotation.y = Math.random();
     tile.castShadow = true; tile.receiveShadow = true; scene.add(tile); tiles.push(tile);
   }
@@ -340,7 +470,7 @@ function setupThree(players){
     body.castShadow = true; g.add(body);
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.32,16,16), new THREE.MeshStandardMaterial({color:p.skin||'#ffd6b0'}));
     head.position.y=0.85; head.castShadow = true; g.add(head);
-    // simpele haar-kap
+    // eenvoudige haar-kap (game-view)
     if (p.hairStyle && p.hairStyle!=='none'){
       const m = new THREE.Mesh(new THREE.SphereGeometry(0.45,16,16), new THREE.MeshStandardMaterial({color:p.hairColor||'#2b1a10'}));
       m.scale.set(1.1,0.7,1.1); m.position.y=1.05; g.add(m);
@@ -378,11 +508,17 @@ function setupThree(players){
   three = { renderer, scene, camera, pathPoints, avatars, players: store.get('players', []), raf };
 }
 
+/**********************
+ * GAME FLOW (vragen, selectie, bewegen)
+ **********************/
 function speak(text){
-  try{ const u = new SpeechSynthesisUtterance(text); u.lang='nl-NL'; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch{}
+  try{
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang='nl-NL'; speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }catch{}
 }
 
-// selecteer N spelers: eerst laagste chosenCount, tie-break random
+// selecteer N spelers eerlijk: minst gekozen eerst, tie-break random
 function selectPlayersEvenly(n){
   const arr = [...three.players].sort((a,b)=>(a.chosenCount??0)-(b.chosenCount??0) || Math.random()-0.5);
   return arr.slice(0, Math.min(n, arr.length));
@@ -401,7 +537,7 @@ function showOverlay(title, html, buttons=[]){
   overlay.style.display = 'flex';
 }
 
-// bewegen langs pad
+// bewegen langs pad (meer-staps animatie)
 function moveAvatarSmooth(playerIndex, targetStep, cb){
   const av = three.avatars[playerIndex]; const p = three.players[playerIndex];
   const current = p.position||0; const endStep = Math.min(targetStep, three.pathPoints.length-1);
@@ -430,7 +566,14 @@ function checkWin(pi){
   }
 }
 
-// vraag-flow
+function winnerAdvance(playerId){
+  const idx = three.players.findIndex(p=>p.id===playerId);
+  if (idx<0) return;
+  const current = three.players[idx].position||0;
+  moveAvatarSmooth(idx, current+1, ()=> checkWin(idx));
+}
+
+// vragen-flow
 function nextQuestionFlow(){
   const mapId = store.get('activeMap','jungle');
   const all = store.get('questions', {});
@@ -454,7 +597,7 @@ function nextQuestionFlow(){
   store.set('players', three.players);
   renderHUD(three.players);
 
-  // presentator
+  // presentator TTS
   const say = (q.speak && q.speak.trim()) || q.text;
   speak(say);
 
@@ -481,14 +624,7 @@ function nextQuestionFlow(){
   }
 }
 
-function winnerAdvance(playerId){
-  const idx = three.players.findIndex(p=>p.id===playerId);
-  if (idx<0) return;
-  const current = three.players[idx].position||0;
-  moveAvatarSmooth(idx, current+1, ()=> checkWin(idx));
-}
-
 /**********************
- * EXTRA: ga terug knoppen
+ * GLOBALE BINDINGS
  **********************/
 document.querySelectorAll('[data-nav]').forEach(b=> b.onclick = ()=> go(b.dataset.nav));

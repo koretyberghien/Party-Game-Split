@@ -45,6 +45,7 @@
                 <option value="square">Vierkant</option>
               </select>
             </div>
+
             <div class="row">
               <label class="label">Huidskleur
                 <input id="pSkin" type="color" class="input" value="#ffd6b0"/>
@@ -54,36 +55,38 @@
               </label>
             </div>
 
+            <!-- Visuele pickers -->
             <div class="row">
               <label class="label">Haarkleur
                 <input id="pHairColor" type="color" class="input" value="#2b1a10"/>
               </label>
-              <label class="label">Haarstijl
-                <select id="pHairStyle" class="select">
-                  <option value="none">Kaal</option>
-                  <option value="short">Kort</option>
-                  <option value="spikes">Spikes</option>
-                  <option value="pony">Ponytail</option>
-                </select>
-              </label>
+              <div class="label">Haarstijl
+                <div id="hairStyles" class="option-grid">
+                  <button class="option" data-hair="none"   title="Kaal">🪒</button>
+                  <button class="option" data-hair="short"  title="Kort">💇‍♂️</button>
+                  <button class="option" data-hair="spikes" title="Spikes">🧑‍🎤</button>
+                  <button class="option" data-hair="pony"   title="Ponytail">👱‍♀️</button>
+                </div>
+              </div>
             </div>
 
             <div class="row">
-              <label class="label">Ogen
-                <select id="pEyes" class="select">
-                  <option value="dot">Dots</option>
-                  <option value="wide">Wide</option>
-                  <option value="smile">Smiley</option>
-                </select>
-              </label>
-              <label class="label">Mond
-                <select id="pMouth" class="select">
-                  <option value="line">Streep</option>
-                  <option value="smile">Smile</option>
-                  <option value="oh">O</option>
-                </select>
-              </label>
+              <div class="label">Ogen
+                <div id="eyeStyles" class="option-grid">
+                  <button class="option" data-eyes="dot"   title="Dots">• •</button>
+                  <button class="option" data-eyes="wide"  title="Wide">◉ ◉</button>
+                  <button class="option" data-eyes="smile" title="Smile">^ ^</button>
+                </div>
+              </div>
+              <div class="label">Mond
+                <div id="mouthStyles" class="option-grid">
+                  <button class="option" data-mouth="line"  title="Streep">―</button>
+                  <button class="option" data-mouth="smile" title="Smile">︶</button>
+                  <button class="option" data-mouth="oh"    title="O">○</button>
+                </div>
+              </div>
             </div>
+
             <button id="pSave" class="btn">Speler opslaan</button>
           </div>
         </div>
@@ -120,6 +123,7 @@
   <section id="questions" class="page hidden">
     <div class="page-inner">
       <h2>Manage Questions</h2>
+
       <div class="card">
         <div class="form">
           <div>Actieve map: <strong id="qMapName"></strong></div>

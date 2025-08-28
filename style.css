@@ -84,10 +84,45 @@ body {
 .item-avatar { width:48px; height:48px; border-radius:999px; border:2px solid #2d1a1a; }
 
 /* Avatar Builder layout */
-.builder { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.builder { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items:start; }
 .builder-right { display:grid; place-items:center; }
 #avatarCanvas { width: 360px; height: 360px; border-radius: 16px; border: 2px solid #7e2a2a; background:#fff8e6; }
 .hint { font-size: 12px; opacity:.8; margin-top:8px; }
+
+/* ===== Visual pickers ===== */
+.option-grid { display:flex; gap:8px; flex-wrap:wrap; }
+.option {
+  padding:8px 10px; border-radius:10px; border:2px solid #7e2a2a;
+  background:#fff8e6; cursor:pointer; font-weight:800; min-width:44px;
+  box-shadow:0 2px 6px #0001;
+}
+.option.active { background:#7e2a2a; color:#fff; }
+
+/* ===== Question cards nicer ===== */
+.q-item {
+  display:grid; grid-template-columns: auto 1fr auto; gap:12px; align-items:center;
+  background:#fff7d9; border:2px solid #9a3a3a; border-radius:14px; padding:12px;
+  box-shadow:0 6px 16px #00000012;
+}
+.q-icon {
+  width:46px; height:46px; border-radius:12px; display:grid; place-items:center;
+  background:#ffe7b6; border:2px solid #7e2a2a; font-size:22px;
+}
+.q-body { display:grid; gap:4px; }
+.q-title { font-weight:900; }
+.q-meta { font-size:13px; opacity:.8; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.badge {
+  display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:4px 8px;
+  background:#7e2a2a; color:#fff; border-radius:999px;
+}
+.q-actions { display:flex; gap:8px; }
+.q-btn {
+  background:#8d2f2f; color:#fff; border:0; padding:8px 10px; border-radius:10px; cursor:pointer;
+}
+.q-btn.edit { background:#355e3b; }
+
+/* ===== Maps badges ===== */
+.map-badge { font-size:12px; padding:2px 8px; border-radius:999px; background:#2a1a1a; color:#fff; margin-left:8px; }
 
 /* ===== Game view ===== */
 .game-wrap { height:100vh; width:100vw; background:#87b86a; position:relative; overflow:hidden; }
