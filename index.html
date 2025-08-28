@@ -8,7 +8,7 @@
 </head>
 <body>
 
-  <!-- ========== HOME ========== -->
+  <!-- ===== HOME ===== -->
   <section id="home" class="home-container">
     <div class="home-inner">
       <h1 class="game-title">The Split Game</h1>
@@ -25,33 +25,72 @@
     </div>
   </section>
 
-  <!-- ========== PLAYERS ========== -->
+  <!-- ===== PLAYERS (met 3D Avatar Builder) ===== -->
   <section id="players" class="page hidden">
     <div class="page-inner">
       <h2>Players</h2>
-      <div class="card">
-        <div class="form">
-          <input id="pName" class="input" placeholder="Naam" />
-          <div class="row">
-            <select id="pGender" class="select">
-              <option value="male">Man</option>
-              <option value="female">Vrouw</option>
-            </select>
-            <select id="pFace" class="select">
-              <option value="round">Rond</option>
-              <option value="oval">Ovaal</option>
-              <option value="square">Vierkant</option>
-            </select>
+
+      <div class="card builder">
+        <div class="builder-left">
+          <div class="form">
+            <input id="pName" class="input" placeholder="Naam" />
+            <div class="row">
+              <select id="pGender" class="select">
+                <option value="male">Man</option>
+                <option value="female">Vrouw</option>
+              </select>
+              <select id="pFace" class="select">
+                <option value="round">Rond</option>
+                <option value="oval">Ovaal</option>
+                <option value="square">Vierkant</option>
+              </select>
+            </div>
+            <div class="row">
+              <label class="label">Huidskleur
+                <input id="pSkin" type="color" class="input" value="#ffd6b0"/>
+              </label>
+              <label class="label">Spelerkleur
+                <input id="pColor" type="color" class="input" value="#ff6b6b"/>
+              </label>
+            </div>
+
+            <div class="row">
+              <label class="label">Haarkleur
+                <input id="pHairColor" type="color" class="input" value="#2b1a10"/>
+              </label>
+              <label class="label">Haarstijl
+                <select id="pHairStyle" class="select">
+                  <option value="none">Kaal</option>
+                  <option value="short">Kort</option>
+                  <option value="spikes">Spikes</option>
+                  <option value="pony">Ponytail</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="row">
+              <label class="label">Ogen
+                <select id="pEyes" class="select">
+                  <option value="dot">Dots</option>
+                  <option value="wide">Wide</option>
+                  <option value="smile">Smiley</option>
+                </select>
+              </label>
+              <label class="label">Mond
+                <select id="pMouth" class="select">
+                  <option value="line">Streep</option>
+                  <option value="smile">Smile</option>
+                  <option value="oh">O</option>
+                </select>
+              </label>
+            </div>
+            <button id="pSave" class="btn">Speler opslaan</button>
           </div>
-          <div class="row">
-            <label class="label">Huidskleur
-              <input id="pSkin" type="color" class="input" value="#ffd6b0" />
-            </label>
-            <label class="label">Spelerkleur
-              <input id="pColor" type="color" class="input" value="#ff6b6b" />
-            </label>
-          </div>
-          <button id="pSave" class="btn">Opslaan</button>
+        </div>
+
+        <div class="builder-right">
+          <canvas id="avatarCanvas"></canvas>
+          <div class="hint">🧩 Pas opties aan — preview update live</div>
         </div>
       </div>
 
@@ -66,7 +105,7 @@
     </div>
   </section>
 
-  <!-- ========== MAPS ========== -->
+  <!-- ===== MAPS ===== -->
   <section id="maps" class="page hidden">
     <div class="page-inner">
       <h2>Select Map</h2>
@@ -77,7 +116,7 @@
     </div>
   </section>
 
-  <!-- ========== QUESTIONS ========== -->
+  <!-- ===== QUESTIONS ===== -->
   <section id="questions" class="page hidden">
     <div class="page-inner">
       <h2>Manage Questions</h2>
@@ -86,8 +125,8 @@
           <div>Actieve map: <strong id="qMapName"></strong></div>
           <textarea id="qText" class="input" rows="3" placeholder="Vraag / opdracht"></textarea>
           <div class="row">
-            <input id="qSpeak" class="input" placeholder="Tekst voor presentator (optioneel)"/>
-            <input id="qCount" class="input" type="number" min="1" max="6" value="2" />
+            <input id="qSpeak" class="input" placeholder="Tekst presentator (optioneel)"/>
+            <input id="qCount" class="input" type="number" min="1" max="8" value="2"/>
           </div>
           <button id="qAdd" class="btn">Vraag toevoegen</button>
         </div>
@@ -103,12 +142,12 @@
     </div>
   </section>
 
-  <!-- ========== GAME ========== -->
+  <!-- ===== GAME ===== -->
   <section id="game" class="game-wrap hidden">
-    <!-- HUD (gekleurde chips met namen) -->
+    <!-- HUD met spelers -->
     <div id="hud"></div>
 
-    <!-- Overlay voor vragen / versus / winner -->
+    <!-- Overlay: vragen / versus / winnaar -->
     <div id="overlay" class="hidden">
       <div class="overlay-card">
         <div id="ovTitle" class="overlay-title">Vraag</div>
@@ -130,7 +169,7 @@
     </div>
   </section>
 
-  <!-- Three.js (CDN) -->
+  <!-- Three.js -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js"></script>
   <!-- App -->
   <script type="module" src="app.js"></script>
